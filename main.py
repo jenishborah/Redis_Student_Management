@@ -1,9 +1,8 @@
-
 from tabulate import tabulate
 import redis
-
 import logging
 import sys
+
 
 # -----------------------------
 # Redis Connection Setup
@@ -18,7 +17,7 @@ except redis.ConnectionError:
 
 
 # -----------------------------
-# Logging Setup (Advanced Bonus)
+# Logging Setup
 # -----------------------------
 logging.basicConfig(
     filename="logs/app.log",
@@ -47,12 +46,14 @@ def calculate_grade(total):
         return "F"
 
 
+# -----------------------------
+# Add Student
+# -----------------------------
 def add_student():
     try:
         enrol = input("Enter enrolment number: ").strip()
         key = f"student:{enrol}"
 
-        # Check if student already exists
         if r.exists(key):
             print("Student already exists!")
             return
@@ -62,7 +63,6 @@ def add_student():
             print("Name cannot be empty!")
             return
 
-        # Input marks with validation
         st1 = int(input("Sessional Test-1 (0-10): "))
         mid = int(input("Mid-Term (0-30): "))
         st2 = int(input("Sessional Test-2 (0-10): "))
@@ -76,7 +76,6 @@ def add_student():
         total = st1 + mid + st2 + end
         grade = calculate_grade(total)
 
-        # Store in Redis Hash
         r.hset(key, mapping={
             "name": name,
             "st1": st1,
@@ -94,6 +93,9 @@ def add_student():
         logging.error("Invalid marks input")
 
 
+# -----------------------------
+# View Student
+# -----------------------------
 def view_student():
     enrol = input("Enter enrolment number: ").strip()
     key = f"student:{enrol}"
@@ -114,9 +116,9 @@ def view_student():
     print(f"Grade: {student.get('grade')}")
 
 
-
-
-
+# -----------------------------
+# Update Marks
+# -----------------------------
 def update_marks():
     enrol = input("Enter enrolment number: ").strip()
     key = f"student:{enrol}"
@@ -136,7 +138,6 @@ def update_marks():
     try:
         new_mark = int(input("Enter new marks: "))
 
-        # Validation based on component
         if choice == "1" and 0 <= new_mark <= 10:
             r.hset(key, "st1", new_mark)
         elif choice == "2" and 0 <= new_mark <= 30:
@@ -149,12 +150,13 @@ def update_marks():
             print("Invalid marks range!")
             return
 
-        # Recalculate total and grade
         student = r.hgetall(key)
-        total = (int(student['st1']) +
-                 int(student['mid']) +
-                 int(student['st2']) +
-                 int(student['end']))
+        total = (
+            int(student['st1']) +
+            int(student['mid']) +
+            int(student['st2']) +
+            int(student['end'])
+        )
 
         grade = calculate_grade(total)
 
@@ -168,6 +170,10 @@ def update_marks():
     except ValueError:
         print("Invalid input! Enter integer marks.")
 
+
+# -----------------------------
+# Delete Student
+# -----------------------------
 def delete_student():
     enrol = input("Enter enrolment number: ").strip()
     key = f"student:{enrol}"
@@ -184,9 +190,9 @@ def delete_student():
         print("Deletion cancelled.")
 
 
-
-
-
+# -----------------------------
+# List Students
+# -----------------------------
 def list_students():
     keys = r.keys("student:*")
 
@@ -212,25 +218,12 @@ def list_students():
         ])
 
     headers = [
-        "Enrolment",
-        "Name",
-        "ST1",
-        "Mid",
-        "ST2",
-        "End",
-        "Total",
-        "Grade"
+        "Enrolment", "Name", "ST1",
+        "Mid", "ST2", "End", "Total", "Grade"
     ]
 
     print("\n--- Student Records ---")
     print(tabulate(table, headers=headers, tablefmt="grid"))
-
-
-
-
-
-
-
 
 
 # -----------------------------
@@ -249,23 +242,30 @@ def main_menu():
         choice = input("Enter your choice: ")
 
         if choice == "1":
-           add_student()
-
+            add_student()
 
         elif choice == "2":
-             view_student()
+            view_student()
+
         elif choice == "3":
-              update_marks()
+            update_marks()
+
         elif choice == "4":
-              delete_student()
+            delete_student()
+
         elif choice == "5":
-              list_students()
-	 elif choice == "6":
+            list_students()
+
+        elif choice == "6":
             print("Exiting program...")
             break
+
         else:
             print("Invalid choice!")
 
-# Run program
+
+# -----------------------------
+# Run Program
+# -----------------------------
 if __name__ == "__main__":
     main_menu()
