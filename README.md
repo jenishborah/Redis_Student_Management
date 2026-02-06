@@ -102,3 +102,9 @@ redis-cli ping
 ```bash
 python main.py
 ```
+### For Gui
+
+```bash
+python gui_main.py
+```
+
